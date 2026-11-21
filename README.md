@@ -47,7 +47,7 @@ This commit contains **documentation only** (README, Blueprint, Architecture, De
 
 | Phase | Focus | Completion Gate |
 |---|---|---|
-| 0 | Existing code audit (clean repo — confirm empty) | Foundation passes tests |
+| 0 | Existing code audit (clean repo — confirm empty) | Clean state confirmed; legacy-code absence documented; greenfield plan approved |
 | 1 | Trading Core | Core independent & testable |
 | 2 | Market Data (Binance REST/WS) | BTCUSDT/XAUUSDT verified |
 | 3 | SMC Engine | Each module tested & documented |
