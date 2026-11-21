@@ -28,7 +28,8 @@ export interface NormalizedCandle {
   readonly isClosed: boolean;
   readonly tradeCount: number;
   readonly takerBuyBaseVolume: number;
-  readonly source: "binance-usdm-rest";
+  readonly source: "binance-usdm-rest" | "binance-usdm-websocket";
+  readonly eventTime?: number;
   readonly receivedAt: number;
 }
 
