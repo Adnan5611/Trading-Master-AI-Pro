@@ -4,7 +4,7 @@
 **Project Type:** Rule-Based Trading Analysis & Signal Platform  
 **Target Platforms:** Windows PC Desktop + Android  
 **Development Language:** TypeScript  
-**Initial Market Data Provider:** Binance USDⓈ-M Futures  
+**Initial Market Data Provider:** Binance derivatives (USDⓈ-M Futures for BTCUSDT; XAUUSDT product-specific TradFi Perpetual, subject to API compatibility verification)  
 **Supported Instruments:** BTCUSDT, XAUUSDT  
 **Version:** 2.0  
 **Execution Mode v1.0:** Analysis, signals, backtesting and paper trading. Live order execution disabled by default.
@@ -41,7 +41,8 @@ System rule-based hoga. AI API ko core analysis ke liye mandatory nahi banaya ja
 
 Important:
 - XAUUSDT ko traditional broker XAUUSD ke barabar assume nahi kiya jayega.
-- XAUUSDT USDT-settled perpetual contract hai.
+- XAUUSDT USDT-settled TradFi Perpetual ke taur par model kiya gaya hai; isay USDⓈ-M Futures contract assume nahi kiya jayega.
+- BTCUSDT aur XAUUSDT ke liye correct Binance product/API family independently verify hogi. Dono symbols ko ek hi endpoint ya stream family par assume nahi kiya jayega.
 - Funding, trading schedule, mark price, tick size aur contract specifications ko separately handle kiya jayega.
 - Startup par exchange metadata se symbol availability aur trading status verify hoga.
 - Agar symbol unavailable ho ya account/region mein access na ho to system alternate data invent nahi karega.
