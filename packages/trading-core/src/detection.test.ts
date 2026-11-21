@@ -18,8 +18,29 @@ describe("common detection result", () => {
     expect(createDetectionResult(validDetection)).toEqual(validDetection);
   });
 
+  it("accepts a detection that is not confirmed yet", () => {
+    const { confirmedAt: _confirmedAt, ...unconfirmed } = validDetection;
+    expect(createDetectionResult(unconfirmed)).toEqual(unconfirmed);
+  });
+
   it("rejects detections without evidence", () => {
     expect(() => createDetectionResult({ ...validDetection, evidence: [] })).toThrow(/evidence/);
+  });
+
+  it("rejects an empty detection id", () => {
+    expect(() => createDetectionResult({ ...validDetection, id: "  " })).toThrow(/id/);
+  });
+
+  it("rejects non-finite detection and data timestamps", () => {
+    expect(() => createDetectionResult({ ...validDetection, detectedAt: Number.NaN })).toThrow(/timestamps/);
+    expect(() => createDetectionResult({
+      ...validDetection,
+      dataTimestamp: { ...validDetection.dataTimestamp, receivedAt: Number.POSITIVE_INFINITY }
+    })).toThrow(/timestamps/);
+  });
+
+  it("rejects a non-finite confirmation timestamp", () => {
+    expect(() => createDetectionResult({ ...validDetection, confirmedAt: Number.NaN })).toThrow(/confirmedAt/);
   });
 
   it("rejects confirmation before detection", () => {
