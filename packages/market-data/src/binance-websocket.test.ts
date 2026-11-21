@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   BINANCE_USDM_MARKET_WS_URL,
   BinanceWebSocketClient,
-  type BinanceWebSocketLike
+  type BinanceWebSocketLike,
+  type BinanceWebSocketOptions
 } from "./binance-websocket.js";
 
 class FakeSocket implements BinanceWebSocketLike {
@@ -67,7 +68,7 @@ const xauEvent = {
   }
 };
 
-function makeClient(overrides: Partial<ConstructorParameters<typeof BinanceWebSocketClient>[0]> = {}) {
+function makeClient(overrides: Partial<BinanceWebSocketOptions> = {}) {
   const socket = new FakeSocket();
   const socketFactory = vi.fn(() => socket);
   const client = new BinanceWebSocketClient({
