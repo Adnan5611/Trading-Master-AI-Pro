@@ -186,7 +186,7 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     socket.open();
     socket.emit(btcEvent);
-    expect(client.getHealth().feedStatus).toBe("LIVE");
+    expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("LIVE");
     now += 2_001;
     expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("STALE");
   });
@@ -196,7 +196,7 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     expect(client.getHealth().feedStatus).toBe("CONNECTING");
     socket.open();
-    expect(client.getHealth().feedStatus).toBe("STALE");
+    expect(client.getHealth().feedStatus).toBe("WAITING");
     client.stop();
     expect(socket.closed).toBe(true);
     expect(client.getHealth().feedStatus).toBe("OFFLINE");
