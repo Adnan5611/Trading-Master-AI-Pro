@@ -162,6 +162,21 @@ describe("BinanceWebSocketClient", () => {
     }));
   });
 
+  it("does not let a commodity session message mask missing XAU price candles", () => {
+    const { client, socket } = makeClient();
+    client.start();
+    socket.open();
+    socket.emit({
+      e: "CommodityUpdate",
+      E: 1_700_000_060_000,
+      t: 1_700_000_000_000,
+      T: 1_700_003_600_000,
+      S: "NO_TRADING"
+    });
+    expect(client.getHealth().instruments.XAUUSDT.feedStatus).toBe("SESSION_CLOSED");
+    expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("WAITING");
+  });
+
   it("marks a feed stale when no valid market event arrives within the threshold", () => {
     let now = 1_700_000_060_100;
     const { client, socket } = makeClient({
