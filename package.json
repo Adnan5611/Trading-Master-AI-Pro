@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "tsc --noEmit -p packages/trading-core/tsconfig.json",
+    "typecheck": "tsc --noEmit -p packages/trading-core/tsconfig.json && tsc --noEmit -p packages/market-data/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "audit": "npm audit",
