@@ -2,7 +2,7 @@
 
 **Source:** Blueprint v2.0 ([`BLUEPRINT.md`](BLUEPRINT.md) §§16–20). This document records implementation status and phase gates; it does not silently change the Blueprint requirements.
 
-**Current status:** Phase 0 baseline and Phase 1 Trading Core implementation are present. Phase 2 — Binance derivatives market data — is the next development phase. Live order execution remains out of scope and disabled.
+**Current status:** Phase 0 baseline and Phase 1 Trading Core implementation are present. Phase 2 — Binance derivatives market data — is in progress with an initial REST adapter scaffold. Live order execution remains out of scope and disabled.
 
 ## Phase Status
 
@@ -10,7 +10,7 @@
 |---|---|---|
 | 0 — Repository baseline and audit | Completed | Initial repository baseline established; no legacy implementation was assumed |
 | 1 — Trading Core | Implemented | Shared contracts, instrument definitions, timeframe and precision helpers, detection validation/IDs, and tests are in the repository |
-| 2 — Market Data | Not started | Product compatibility, REST/WS adapters, metadata, normalized candles, recovery, and CSV import must pass the gate below |
+| 2 — Market Data | In progress | Initial REST client, kline normalizer/validator, and unit tests added; product metadata verification and CI remain mandatory gates |
 | 3 — SMC Engine | Not started | Each detector/validator/scorer has measurable rules and tests |
 | 4 — Price Action Engine | Not started | Independent patterns, validation, and tests |
 | 5 — Volume and Advanced Engines | Not started | Source availability and calculation accuracy verified |
@@ -56,6 +56,15 @@ The initial identifiers are BTCUSDT and XAUUSDT, but they must not be assumed to
 - XAUUSDT must not be assumed to be available through the same USDⓈ-M endpoints or stream family as BTCUSDT.
 - Verify product availability, symbol status, endpoint family, intervals, trading schedule, contract specifications, and market-data fields against the correct official Binance metadata before enabling an instrument.
 - If the selected product is unavailable through the supported API or for the applicable access region, return an explicit unsupported/unavailable state. Do not substitute another symbol or generate synthetic live data.
+
+### Current implementation snapshot (initial Phase 2 increment)
+
+- Added a separate `@trading-master-ai-pro/market-data` workspace package.
+- Added public REST methods for ticker price, klines, and symbol metadata using the USDⓈ-M REST base URL.
+- Added strict input checks, numeric parsing, OHLC validation, duplicate/order checks, and candle closed-state calculation.
+- Added mocked unit tests for successful parsing and invalid responses.
+- The client does not use API keys and contains no order-placement method.
+- **Not yet verified:** live CI, live product identity/contract metadata for both symbols, and whether this REST product endpoint is the correct production source for XAUUSDT TradFi Perpetual. Do not enable a LIVE feed until that gate passes.
 
 ### Module 2.1 — Exchange/Product Metadata
 
