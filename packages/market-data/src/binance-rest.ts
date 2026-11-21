@@ -83,6 +83,17 @@ export interface VerifiedInstrumentMetadata extends BinanceSymbolMetadata {
   readonly stepSize: number;
 }
 
+export interface BinanceTradingSession {
+  readonly startTime: number;
+  readonly endTime: number;
+  readonly type: "REGULAR" | "NO_TRADING";
+}
+
+export interface BinanceTradingSchedule {
+  readonly updateTime: number;
+  readonly commoditySessions: readonly BinanceTradingSession[];
+}
+
 const EXPECTED_PRODUCT: Record<MarketInstrument, {
   readonly contractType: "PERPETUAL" | "TRADIFI_PERPETUAL";
   readonly underlyingType: "COIN" | "COMMODITY";
@@ -251,6 +262,33 @@ export class BinanceRestClient {
     const metadata = payload.symbols?.find((item) => item.symbol === instrument);
     if (!metadata) throw new Error(`Instrument ${instrument} is not listed by this Binance product endpoint`);
     return Object.freeze({ ...metadata });
+  }
+
+  async getTradingSchedule(): Promise<BinanceTradingSchedule> {
+    const payload = await this.get<unknown>("/fapi/v1/tradingSchedule", {});
+    if (!isRecord(payload) || !isRecord(payload.marketSchedules)) {
+      throw new TypeError("Malformed Binance trading schedule response");
+    }
+    const commodity = payload.marketSchedules.COMMODITY;
+    if (!isRecord(commodity) || !Array.isArray(commodity.sessions)) {
+      throw new TypeError("Binance trading schedule is missing COMMODITY sessions");
+    }
+    const sessions = commodity.sessions.map((raw): BinanceTradingSession => {
+      if (!isRecord(raw)) throw new TypeError("Malformed commodity trading session");
+      const startTime = finiteNumber(raw.startTime, "session.startTime");
+      const endTime = finiteNumber(raw.endTime, "session.endTime");
+      if (!Number.isSafeInteger(startTime) || !Number.isSafeInteger(endTime) || endTime <= startTime) {
+        throw new RangeError("Invalid commodity trading session timestamps");
+      }
+      if (raw.type !== "REGULAR" && raw.type !== "NO_TRADING") {
+        throw new TypeError("Unknown commodity trading session type");
+      }
+      return Object.freeze({ startTime, endTime, type: raw.type });
+    });
+    return Object.freeze({
+      updateTime: finiteNumber(payload.updateTime, "updateTime"),
+      commoditySessions: Object.freeze(sessions)
+    });
   }
 
   async verifyInstrumentMetadata(instrument: MarketInstrument): Promise<VerifiedInstrumentMetadata> {
