@@ -33,6 +33,6 @@ describe("price precision utilities", () => {
   });
 
   it("rejects an invalid runtime rounding mode", () => {
-    expect(() => alignToStep(1, 0.01, "sideways" as "nearest")).toThrow(/mode/);
+    expect(() => alignToStep(1, 0.01, "sideways" as never)).toThrow(/mode/);
   });
 });
