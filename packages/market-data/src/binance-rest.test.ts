@@ -80,4 +80,38 @@ describe("BinanceRestClient", () => {
     });
     await expect(client.getKlines("BTCUSDT", "1m", 2)).rejects.toThrow("Duplicate");
   });
+  it("loads and validates the commodity trading schedule for TradFi products", async () => {
+    const schedule = {
+      updateTime: 1_700_000_000_000,
+      marketSchedules: {
+        COMMODITY: {
+          sessions: [
+            { startTime: 1_700_000_000_000, endTime: 1_700_003_600_000, type: "REGULAR" },
+            { startTime: 1_700_003_600_000, endTime: 1_700_010_800_000, type: "NO_TRADING" }
+          ]
+        }
+      }
+    };
+    const client = new BinanceRestClient({
+      fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(schedule))
+    });
+    await expect(client.getTradingSchedule()).resolves.toMatchObject({
+      updateTime: 1_700_000_000_000,
+      commoditySessions: [
+        { type: "REGULAR" },
+        { type: "NO_TRADING" }
+      ]
+    });
+  });
+
+  it("rejects malformed commodity trading schedules", async () => {
+    const client = new BinanceRestClient({
+      fetcher: vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({
+        updateTime: 1_700_000_000_000,
+        marketSchedules: { COMMODITY: { sessions: [{ startTime: 10, endTime: 5, type: "REGULAR" }] } }
+      }))
+    });
+    await expect(client.getTradingSchedule()).rejects.toThrow("Invalid commodity trading session");
+  });
+
 });
