@@ -32,7 +32,7 @@ These are **candidate/configured timeframes**, not a claim that every Binance pr
 ## Current Repository Status
 
 - **Phase 1 — Trading Core:** implementation is present on `main`. It includes shared contracts, instrument configuration, timeframe utilities, precision helpers, detection validation, and deterministic detection identifiers.
-- **Phase 2 — Market Data:** not yet implemented. Binance REST/WebSocket adapters, historical synchronization, metadata loading, candle normalization, validation/recovery integration, and CSV import remain future work.
+- **Phase 2 — Market Data:** in progress. An initial public REST adapter package now includes price, kline, and symbol-metadata requests plus candle validation/tests. Product compatibility is not yet approved for either instrument; WebSocket streaming, full metadata/filter validation, synchronization/recovery, and CSV import remain future work.
 - **Analysis and decision engines:** SMC, Price Action, Volume, Volume Profile, Order Flow, Risk, Confluence, and Signal engines are not yet implemented.
 - **Applications:** desktop and Android user interfaces are not yet implemented.
 
@@ -75,7 +75,7 @@ Binance Product API
 |---|---|---|
 | 0 | Repository/code audit | Completed as the initial repository baseline; legacy code was not assumed |
 | 1 | Trading Core | Implemented; maintain with automated checks |
-| 2 | Binance derivatives market data | Next: verify each product, then REST/WS, metadata, candles, recovery, and CSV import |
+| 2 | Binance derivatives market data | In progress: initial REST client and parser added; verify product metadata and run CI before enabling feeds |
 | 3 | SMC Engine | Documented rules, independent modules, tests |
 | 4 | Price Action Engine | Independent patterns, validation, tests |
 | 5 | Volume and advanced engines | Verify source availability and calculation accuracy |
