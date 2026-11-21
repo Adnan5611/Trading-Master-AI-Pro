@@ -46,7 +46,7 @@ export interface BinanceWebSocketLike {
   readonly readyState: number;
   onopen: ((event: Event) => void) | null;
   onmessage: ((event: MessageEvent) => void) | null;
-  onerror: ((event: ErrorEvent) => void) | null;
+  onerror: ((event: unknown) => void) | null;
   onclose: ((event: Event) => void) | null;
   close(code?: number, reason?: string): void;
 }
@@ -293,14 +293,14 @@ export class BinanceWebSocketClient {
       const receivedAt = this.now();
       if (payload.e === "kline" || payload.e === "continuous_kline") {
         const candle = parseCandle(payload, receivedAt);
-        this.lastEventAt = receivedAt;
+        this.lastCandleEventAt[candle.instrument] = receivedAt;
         this.onCandle?.(candle);
         this.publishState();
         return;
       }
       if (payload.e === "CommodityUpdate") {
         const session = parseCommoditySession(payload, receivedAt);
-        this.lastEventAt = receivedAt;
+        this.commoditySession = session;
         this.onSession?.(session);
         this.publishState();
       }
