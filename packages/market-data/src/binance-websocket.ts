@@ -35,10 +35,10 @@ export interface BinanceWebSocketHealth {
 
 export interface BinanceWebSocketLike {
   readonly readyState: number;
-  onopen: ((event: unknown) => void) | null;
+  onopen: ((event: Event) => void) | null;
   onmessage: ((event: { readonly data: unknown }) => void) | null;
-  onerror: ((event: unknown) => void) | null;
-  onclose: ((event: unknown) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onclose: ((event: Event) => void) | null;
   close(code?: number, reason?: string): void;
 }
 
@@ -174,10 +174,10 @@ export class BinanceWebSocketClient {
   private readonly staleAfterMs: number;
   private readonly now: () => number;
   private readonly socketFactory: (url: string) => BinanceWebSocketLike;
-  private readonly onCandle?: (candle: NormalizedCandle) => void;
-  private readonly onSession?: (session: BinanceCommoditySession) => void;
-  private readonly onState?: (health: BinanceWebSocketHealth) => void;
-  private readonly onError?: (error: Error) => void;
+  private readonly onCandle: ((candle: NormalizedCandle) => void) | undefined;
+  private readonly onSession: ((session: BinanceCommoditySession) => void) | undefined;
+  private readonly onState: ((health: BinanceWebSocketHealth) => void) | undefined;
+  private readonly onError: ((error: Error) => void) | undefined;
   private socket: BinanceWebSocketLike | null = null;
   private state: BinanceWebSocketState = "idle";
   private lastEventAt: number | null = null;
