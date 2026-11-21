@@ -10,24 +10,35 @@ function assertPositiveFinite(value: number, name: string): void {
 export function decimalPlaces(step: number): number {
   assertPositiveFinite(step, "step");
   const text = step.toString().toLowerCase();
-  if (text.includes("e-")) {
-    const [coefficient, exponent] = text.split("e-");
-    return Math.max(0, Number(exponent) - ((coefficient?.split(".")[1]?.length) ?? 0));
+  const [coefficient, exponentText] = text.split("e");
+  const coefficientDecimals = (coefficient?.split(".")[1] ?? "").length;
+
+  if (exponentText !== undefined) {
+    const exponent = Number(exponentText);
+    return Math.max(0, coefficientDecimals - exponent);
   }
-  return (text.split(".")[1] ?? "").length;
+
+  return coefficientDecimals;
 }
 
 /** Align a price/quantity to an exchange-provided increment. */
 export function alignToStep(value: number, step: number, mode: RoundingMode = "nearest"): number {
   if (!Number.isFinite(value)) throw new RangeError("value must be finite");
   assertPositiveFinite(step, "step");
+  if (mode !== "down" && mode !== "up" && mode !== "nearest") {
+    throw new TypeError("mode must be down, up, or nearest");
+  }
+
   const ratio = value / step;
-  const units = mode === "down" ? Math.floor(ratio + 1e-10)
-    : mode === "up" ? Math.ceil(ratio - 1e-10)
+  // Scale the tolerance to the magnitude of the ratio to absorb floating-point noise.
+  const tolerance = Number.EPSILON * Math.max(1, Math.abs(ratio)) * 4;
+  const units = mode === "down" ? Math.floor(ratio + tolerance)
+    : mode === "up" ? Math.ceil(ratio - tolerance)
     : Math.round(ratio);
-  return Number((units * step).toFixed(Math.min(12, decimalPlaces(step) + 2)));
+
+  return Number((units * step).toFixed(Math.min(100, decimalPlaces(step) + 2)));
 }
 
 export function formatToStep(value: number, step: number): string {
-  return alignToStep(value, step).toFixed(decimalPlaces(step));
+  return alignToStep(value, step).toFixed(Math.min(100, decimalPlaces(step)));
 }
