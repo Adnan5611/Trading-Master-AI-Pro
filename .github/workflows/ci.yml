@@ -22,8 +22,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
-      - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+      - name: Audit dependencies (fail on any vulnerability)
+        run: npm audit --audit-level=low
       - name: Run unit tests
         run: npm test
       - name: Run TypeScript checks
