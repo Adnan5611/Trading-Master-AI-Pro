@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   quality:
-    name: Tests and TypeScript
+    name: Tests, TypeScript, and dependency audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,6 +22,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
       - name: Run unit tests
         run: npm test
       - name: Run TypeScript checks
