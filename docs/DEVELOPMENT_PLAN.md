@@ -12,8 +12,9 @@
 - Market structure tests
 - Hardcoded confidence removal
 - No-lookahead verification
-- **Completion:** Existing foundation passes tests.
-- **Current note:** Repository restarted clean (previous files intentionally deleted). Phase 0 will confirm empty state and define the greenfield foundation. No Day 13–16 recovery attempted.
+- **Applicability:** these audit tasks apply only where legacy code exists. This repository is intentionally empty, so there is no code to review, fix, or test.
+- **Completion:** Clean repository state confirmed; absence of legacy code documented; approved greenfield implementation plan established.
+- **Note:** Repository restarted clean (previous files intentionally deleted). No Day 13–16 recovery was attempted. Because no application code or test suite exists, Phase 0 does not report passing tests — TypeScript tooling, test-runner scaffolding and linting begin in Phase 1.
 
 ### Phase 1 — Trading Core
 - Shared types, instrument configuration, timeframe utilities, price precision, data contracts, common detection result

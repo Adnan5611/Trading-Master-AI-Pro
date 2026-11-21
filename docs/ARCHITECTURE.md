@@ -109,7 +109,7 @@ No secrets in frontends; no secrets in logs; live default off; withdrawal disabl
 trading-master-ai-pro/
 |-- apps/backend/ | desktop/ | mobile/
 |-- packages/trading-core/ | market-data/ | engine-*/ | backtesting/
-|-- docs/ (BLUEPRINT_V2.md, DATA/SMC/PRICE_ACTION/RISK/API specs, TESTING_PLAN.md)
+|-- docs/ (BLUEPRINT.md, DATA/SMC/PRICE_ACTION/RISK/API specs, TESTING_PLAN.md)
 |-- tests/
 |-- .env.example
 |-- README.md

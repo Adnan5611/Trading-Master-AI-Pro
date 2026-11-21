@@ -63,14 +63,16 @@ apps/mobile/ios/Pods/
 .expo/
 .expo-shared/
 
-# Local databases & runtime data (market data is external)
+# Local databases & runtime data
+# Only the local runtime-data directory is ignored: historical CSV datasets
+# and test fixtures are intended to be committed in the future.
 *.sqlite
 *.sqlite3
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
-data/
+/data/runtime/
 tmp/
 temp/
 logs/

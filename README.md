@@ -32,7 +32,8 @@ Market Data Provider → Data Adapter → Data Validation → Normalized Data
 ```
 
 - **Trading Core** is framework-independent (no Express/frontend imports) and shared by PC + Android.
-- **Engines** (SMC, Price Action, Volume, Volume Profile, Order Flow, Volatility, Session, Risk, Confluence, Signal) each follow **Detector → Validator → Scorer**. No arbitrary hardcoded confidence values.
+- **Analysis engines** (SMC, Price Action, Volume, Volume Profile, Order Flow, Volatility, Session) each follow **Detector → Validator → Scorer**, as specified in Blueprint Section 5. No arbitrary hardcoded confidence values.
+- **Decision engines have separate responsibilities** (Blueprint Sections 6–8) and are not Detector/Validator/Scorer clones: the **Risk Engine** (§6) calculates sizing, stops and limits and blocks invalid trade suggestions independently of signal generation; the **Confluence Engine** (§7) combines available engine results using documented, configurable rules and always shows contributing factors (score is not probability; missing data is not zero; no double-counting); the **Signal Engine** (§8) emits `BUY`/`SELL`/`WAIT`/`NO SIGNAL` with evidence, invalidation, expiry and data-quality status only after required data and risk validations pass.
 - **Data providers** are separate from trading logic.
 - **Critical rules:** strict candle validation, no look-ahead bias (closed vs. forming candles distinguished; swings confirmed only after required right-side candles close), no invalid candles into engines.
 
