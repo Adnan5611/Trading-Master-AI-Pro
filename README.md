@@ -21,7 +21,7 @@ If the Blueprint and implementation conflict, stop and resolve the discrepancy b
 | BTCUSDT | Binance USDⓈ-M Futures | Confirm symbol status and contract filters from live exchange metadata |
 | XAUUSDT | Currently modelled in code as Binance TradFi Perpetual | Confirm product/API availability, trading schedule, contract rules, and data-stream compatibility before enabling |
 
-**Important:** BTCUSDT USDⓈ-M Futures and XAUUSDT TradFi Perpetual must not be treated as interchangeable contract types. The XAUUSDT classification in the current code is a provisional product-specific model, not proof that it is available through the same USDⓈ-M endpoints. Phase 2 must verify each instrument against the correct official Binance product metadata and endpoint family. If a symbol or product is unavailable, the application must report it as unsupported/unavailable; it must not silently substitute another symbol or fabricate data.
+**Important:** BTCUSDT and XAUUSDT are both listed in USDⓈ-M exchange metadata, but they are different contract types. BTCUSDT is `PERPETUAL`; XAUUSDT is `TRADIFI_PERPETUAL`. Both live ticker and kline request families returned data in verification. XAUUSDT also requires commodity trading-session awareness. The app must never treat these instruments as interchangeable or use BTC contract rules for gold. unsupported/unavailable; it must not silently substitute another symbol or fabricate data.
 
 ### Candidate timeframes in Trading Core
 
