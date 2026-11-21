@@ -36,7 +36,7 @@ export interface BinanceWebSocketHealth {
 export interface BinanceWebSocketLike {
   readonly readyState: number;
   onopen: ((event: Event) => void) | null;
-  onmessage: ((event: { readonly data: unknown }) => void) | null;
+  onmessage: ((event: MessageEvent) => void) | null;
   onerror: ((event: Event) => void) | null;
   onclose: ((event: Event) => void) | null;
   close(code?: number, reason?: string): void;
