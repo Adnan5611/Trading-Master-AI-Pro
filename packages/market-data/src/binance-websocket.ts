@@ -46,7 +46,7 @@ export interface BinanceWebSocketLike {
   readonly readyState: number;
   onopen: ((event: Event) => void) | null;
   onmessage: ((event: MessageEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
+  onerror: ((event: ErrorEvent) => void) | null;
   onclose: ((event: Event) => void) | null;
   close(code?: number, reason?: string): void;
 }
@@ -80,13 +80,13 @@ function assertTimeframe(value: string): asserts value is MarketTimeframe {
 }
 
 function defaultSocketFactory(url: string): BinanceWebSocketLike {
-  const runtime = globalThis as typeof globalThis & {
+  const WebSocketCtor = (globalThis as unknown as {
     WebSocket?: new (url: string) => BinanceWebSocketLike;
-  };
-  if (!runtime.WebSocket) {
+  }).WebSocket;
+  if (!WebSocketCtor) {
     throw new Error("This runtime does not provide WebSocket; inject a socketFactory");
   }
-  return new runtime.WebSocket(url);
+  return new WebSocketCtor(url);
 }
 
 function parseCandle(
