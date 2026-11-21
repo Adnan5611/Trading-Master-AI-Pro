@@ -2,6 +2,7 @@
   "name": "@trading-master-ai-pro/trading-core",
   "version": "0.1.0",
   "private": true,
+  "description": "Framework-independent trading core shared by the backend, desktop and Android apps",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,5 +11,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   }
 }
