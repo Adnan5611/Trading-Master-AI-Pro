@@ -7,7 +7,6 @@
  */
 
 import {
-  MARKET_INSTRUMENTS,
   MARKET_TIMEFRAMES,
   type MarketInstrument,
   type MarketTimeframe,
@@ -104,6 +103,7 @@ function parseCandle(
 
   if (typeof candle.i !== "string") throw new TypeError("Missing Binance kline interval");
   assertTimeframe(candle.i);
+  const eventTime = parseNumber(event.E, "event.E");
   const openTime = parseNumber(candle.t, "k.t");
   const closeTime = parseNumber(candle.T, "k.T");
   const open = parseNumber(candle.o, "k.o");
@@ -114,7 +114,7 @@ function parseCandle(
   const tradeCount = parseNumber(candle.n, "k.n");
   const takerBuyBaseVolume = parseNumber(candle.V, "k.V");
 
-  if (!Number.isSafeInteger(openTime) || !Number.isSafeInteger(closeTime) || closeTime < openTime) {
+  if (!Number.isSafeInteger(eventTime) || !Number.isSafeInteger(openTime) || !Number.isSafeInteger(closeTime) || closeTime < openTime) {
     throw new RangeError("Invalid Binance WebSocket candle timestamps");
   }
   if (open <= 0 || high <= 0 || low <= 0 || close <= 0 ||
@@ -131,6 +131,7 @@ function parseCandle(
   return Object.freeze({
     instrument,
     timeframe: candle.i,
+    eventTime,
     openTime,
     closeTime,
     open,
