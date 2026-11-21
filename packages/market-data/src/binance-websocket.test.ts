@@ -106,7 +106,7 @@ describe("BinanceWebSocketClient", () => {
       isClosed: false,
       source: "binance-usdm-websocket"
     }));
-    expect(client.getHealth().feedStatus).toBe("LIVE");
+    expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("LIVE");
   });
 
   it("normalizes XAU continuous-kline events only for TRADIFI_PERPETUAL", () => {
@@ -173,7 +173,7 @@ describe("BinanceWebSocketClient", () => {
     socket.emit(btcEvent);
     expect(client.getHealth().feedStatus).toBe("LIVE");
     now += 2_001;
-    expect(client.getHealth().feedStatus).toBe("STALE");
+    expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("STALE");
   });
 
   it("reports connection state and closes the socket on stop", () => {
