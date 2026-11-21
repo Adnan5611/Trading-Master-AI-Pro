@@ -9,7 +9,7 @@ import {
 class FakeSocket implements BinanceWebSocketLike {
   readonly readyState = 0;
   onopen: ((event: unknown) => void) | null = null;
-  onmessage: ((event: { readonly data: unknown }) => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
   onerror: ((event: unknown) => void) | null = null;
   onclose: ((event: unknown) => void) | null = null;
   closed = false;
@@ -19,7 +19,7 @@ class FakeSocket implements BinanceWebSocketLike {
   }
 
   emit(payload: unknown): void {
-    this.onmessage?.({ data: JSON.stringify(payload) });
+    this.onmessage?.(new MessageEvent("message", { data: JSON.stringify(payload) }));
   }
 
   close(): void {
