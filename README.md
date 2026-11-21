@@ -1,83 +1,111 @@
 # Trading Master AI Pro
 
-**Rule-Based Trading Analysis & Signal Platform — v1.0 (Bootstrap)**
+**Rule-Based Trading Analysis & Signal Platform — active development**
 
-Modular, reliable, explainable, and testable trading analysis platform for **BTCUSDT** and **XAUUSDT**, running on **Windows PC Desktop + Android** with a shared **TypeScript** Trading Core.
+Trading Master AI Pro is a modular TypeScript platform for market analysis, explainable signals, historical backtesting, and paper trading. The initial market-data venue is **Binance derivatives**. The initial instrument identifiers are **BTCUSDT** and **XAUUSDT**, subject to instrument-specific exchange verification.
 
-> **Safety:** Version 1.0 supports **analysis, signals, backtesting, and paper trading only**. **Live order execution is disabled by default** and remains a future optional feature. No real trades are placed by this codebase. Never commit API keys, secrets, or tokens.
+> **Safety:** The current project is an analysis and research platform. Live order execution is not implemented and must remain disabled. Never commit API keys, secrets, or tokens.
 
 ## Source of Truth
 
-- **Blueprint v2.0:** [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md) — complete supplied specification, preserved without silent changes.
+- **Blueprint v2.0:** [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md)
 - **Architecture:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - **Development Plan:** [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md)
 
-If Blueprint and code ever conflict, stop and request clarification — do not invent requirements.
+If the Blueprint and implementation conflict, stop and resolve the discrepancy before building on it.
 
-## Scope (v1.0)
+## Initial Market Scope
 
-- **Instruments:** BTCUSDT (Binance USDⓈ-M Futures), XAUUSDT (Binance TradFi Perpetual)
-  - XAUUSDT is **not** traditional broker XAUUSD. It is a USDT-settled perpetual; funding, schedule, mark price, tick size, and contract specs are handled separately and verified from exchange metadata at startup.
-- **Timeframes:** 1m, 5m, 15m, 30m, 1h, 2h, 4h, 1d (only those supported per instrument)
-- **Modes:** Market analysis, Buy/Sell/Wait signals, Entry/SL/TP suggestions, backtesting, paper trading, alerts/notifications
-- **Data:** Binance public market data (REST + WebSocket). Public endpoints generally need no API key. Private/live access is backend-only; withdrawal permission is never enabled.
+| Instrument | Current project classification | Verification required |
+|---|---|---|
+| BTCUSDT | Binance USDⓈ-M Futures | Confirm symbol status and contract filters from live exchange metadata |
+| XAUUSDT | Currently modelled in code as Binance TradFi Perpetual | Confirm product/API availability, trading schedule, contract rules, and data-stream compatibility before enabling |
+
+**Important:** BTCUSDT USDⓈ-M Futures and XAUUSDT TradFi Perpetual must not be treated as interchangeable contract types. The XAUUSDT classification in the current code is a provisional product-specific model, not proof that it is available through the same USDⓈ-M endpoints. Phase 2 must verify each instrument against the correct official Binance product metadata and endpoint family. If a symbol or product is unavailable, the application must report it as unsupported/unavailable; it must not silently substitute another symbol or fabricate data.
+
+### Candidate timeframes in Trading Core
+
+The current shared contract lists: `1m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, and `1d`.
+
+These are **candidate/configured timeframes**, not a claim that every Binance product supports every interval. Phase 2 must verify actual per-instrument support from the relevant exchange API.
+
+## Current Repository Status
+
+- **Phase 1 — Trading Core:** implementation is present on `main`. It includes shared contracts, instrument configuration, timeframe utilities, precision helpers, detection validation, and deterministic detection identifiers.
+- **Phase 2 — Market Data:** not yet implemented. Binance REST/WebSocket adapters, historical synchronization, metadata loading, candle normalization, validation/recovery integration, and CSV import remain future work.
+- **Analysis and decision engines:** SMC, Price Action, Volume, Volume Profile, Order Flow, Risk, Confluence, and Signal engines are not yet implemented.
+- **Applications:** desktop and Android user interfaces are not yet implemented.
+
+The repository includes automated scripts for typechecking, tests, build, audit, and verification. Run the checks locally before proposing a change:
+
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run build
+npm audit --audit-level=low
+```
+
+The presence of a test suite does not prove market-data connectivity, signal accuracy, or profitability. Report only test results actually observed in the relevant commit/CI run.
 
 ## Architecture at a Glance
 
 ```
-Market Data Provider → Data Adapter → Data Validation → Normalized Data
-  → Trading Core → Analysis Engines → Validators → Scorers
-  → Confluence Engine → Risk Engine → Signal Engine → Output
-  → Desktop App / Android App
+Binance Product API
+  → Product-specific REST / WebSocket adapters
+  → Exchange metadata + data-quality validation
+  → Normalized market data
+  → Shared Trading Core
+  → Independent analysis engines
+  → Confluence + Risk + Signal decisions
+  → Desktop / Android applications
 ```
 
-- **Trading Core** is framework-independent (no Express/frontend imports) and shared by PC + Android.
-- **Analysis engines** (SMC, Price Action, Volume, Volume Profile, Order Flow, Volatility, Session) each follow **Detector → Validator → Scorer**, as specified in Blueprint Section 5. No arbitrary hardcoded confidence values.
-- **Decision engines have separate responsibilities** (Blueprint Sections 6–8) and are not Detector/Validator/Scorer clones: the **Risk Engine** (§6) calculates sizing, stops and limits and blocks invalid trade suggestions independently of signal generation; the **Confluence Engine** (§7) combines available engine results using documented, configurable rules and always shows contributing factors (score is not probability; missing data is not zero; no double-counting); the **Signal Engine** (§8) emits `BUY`/`SELL`/`WAIT`/`NO SIGNAL` with evidence, invalidation, expiry and data-quality status only after required data and risk validations pass.
-- **Data providers** are separate from trading logic.
-- **Critical rules:** strict candle validation, no look-ahead bias (closed vs. forming candles distinguished; swings confirmed only after required right-side candles close), no invalid candles into engines.
+- Trading Core stays framework-independent and shared across applications.
+- Data adapters are separate from trading logic.
+- Each analysis engine must expose evidence and documented rules.
+- Closed candles and forming candles must remain distinguishable.
+- No look-ahead bias, duplicate detections, invented market data, or arbitrary confidence/probability claims.
+- Order-book liquidity must not be represented as executed volume; venue-specific flow must not be described as global market flow.
+- Risk validation is required before a trade suggestion can be emitted.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for layers, data flow, and security.
+## Development Roadmap
 
-## Repository Status — Bootstrap Only
-
-This commit contains **documentation only** (README, Blueprint, Architecture, Development Plan, `.gitignore`). **No trading engines, no data adapters, no dummy/placeholder logic** have been added yet. Implementation starts only after approval of the Phase 0 plan.
-
-## Development Roadmap (Summary)
-
-| Phase | Focus | Completion Gate |
+| Phase | Focus | Status / completion gate |
 |---|---|---|
-| 0 | Existing code audit (clean repo — confirm empty) | Clean state confirmed; legacy-code absence documented; greenfield plan approved |
-| 1 | Trading Core | Core independent & testable |
-| 2 | Market Data (Binance REST/WS) | BTCUSDT/XAUUSDT verified |
-| 3 | SMC Engine | Each module tested & documented |
-| 4 | Price Action Engine | Independent tested engine |
-| 5 | Volume & Advanced Engines | Accuracy verified |
-| 6 | Decision System (Risk/Confluence/Signal) | Deterministic signals + evidence |
-| 7 | Backtesting & Paper Trading | Reproducible results |
-| 8 | PC Desktop App | Installable build |
-| 9 | Android App | Installable build |
-| 10 | Final Validation | Release candidate |
+| 0 | Repository/code audit | Completed as the initial repository baseline; legacy code was not assumed |
+| 1 | Trading Core | Implemented; maintain with automated checks |
+| 2 | Binance derivatives market data | Next: verify each product, then REST/WS, metadata, candles, recovery, and CSV import |
+| 3 | SMC Engine | Documented rules, independent modules, tests |
+| 4 | Price Action Engine | Independent patterns, validation, tests |
+| 5 | Volume and advanced engines | Verify source availability and calculation accuracy |
+| 6 | Risk, Confluence, Signal | Deterministic decisions with evidence and risk checks |
+| 7 | Backtesting and Paper Trading | Reproducible replay including fees, slippage, and applicable funding |
+| 8 | PC Desktop App | Stable installable build |
+| 9 | Android App | Stable installable build |
+| 10 | Final Validation | Integration, performance, security, and paper-trading review |
 
-Full detail: [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md)
+See [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md) for phase gates and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the system design.
 
-## Getting Started
+## Security and Trading Safety
 
-> No application code exists yet — there is nothing to run. Setup instructions will be added with Phase 1 scaffolding (TypeScript toolchain, test runner, linting).
+- Public market-data access should be used for Phase 2; do not request trading permissions.
+- Secrets, if ever required for a later optional feature, stay backend-only and outside source control.
+- Withdrawal permission must never be enabled.
+- Live trading is not part of the current implementation.
+- Respect exchange rate limits and terms; handle disconnects and stale data explicitly.
+- Never show a disconnected or stale feed as LIVE.
+- Never claim profitability or guaranteed accuracy without robust, reproducible evidence.
 
-1. Read [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md) end-to-end.
-2. Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/DEVELOPMENT_PLAN.md`](docs/DEVELOPMENT_PLAN.md).
-3. Wait for Phase 0 approval before implementing.
+## Project Principles
 
-## Security
-
-- Secrets stay backend-only; never embed keys in desktop/Android frontends.
-- Live trading default **off**; withdrawal permission **never** enabled.
-- Never log keys. Respect rate limits. WebSocket reconnect + REST recovery required.
-- Use environment variables for configuration; never commit secrets (see `.gitignore`).
-
-## Principles
-
-1. Accuracy over feature quantity. 2. Tested rules over assumptions. 3. Data quality over visuals. 4. Risk before signals. 5. Independent engines. 6. Shared Core. 7. No fake confidence. 8. No live trading without explicit activation. 9. Every detection has evidence. 10. Every important calculation is testable.
-
-**Final Objective:** A modular, reliable, explainable, testable platform for BTCUSDT/XAUUSDT on PC + Android with clean architecture for future expansion.
+1. Accuracy over feature quantity.
+2. Tested rules over assumptions.
+3. Data quality over visuals.
+4. Risk before trade suggestions.
+5. Independent, explainable engines.
+6. Shared Trading Core.
+7. No fake confidence or probability claims.
+8. No live execution by default.
+9. Every detection has evidence.
+10. Every important calculation is testable.
