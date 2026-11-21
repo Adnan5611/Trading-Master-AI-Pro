@@ -64,17 +64,23 @@ The initial identifiers are BTCUSDT and XAUUSDT, but they must not be assumed to
 - Added strict input checks, numeric parsing, OHLC validation, duplicate/order checks, and candle closed-state calculation.
 - Added mocked unit tests for successful parsing and invalid responses.
 - The client does not use API keys and contains no order-placement method.
-- **Not yet verified:** live CI, live product identity/contract metadata for both symbols, and whether this REST product endpoint is the correct production source for XAUUSDT TradFi Perpetual. Do not enable a LIVE feed until that gate passes.
+- Live CI passed after the workspace lockfile was synchronized (123 tests, build, typecheck, audit).\n- Live Binance USDⓈ-M `/fapi/v1/exchangeInfo` verified BTCUSDT as `PERPETUAL` / `COIN` / `Crypto`, and XAUUSDT as `TRADIFI_PERPETUAL` / `COMMODITY` / `TradFi`; both report `TRADING` and USDT quote/margin assets.\n- Live ticker, `/fapi/v1/klines`, and `/fapi/v1/continuousKlines` requests succeeded for both symbols. For continuous klines, BTCUSDT uses `PERPETUAL`; XAUUSDT uses `TRADIFI_PERPETUAL`.\n- Exchange filters observed: BTCUSDT tickSize `0.10`, LOT_SIZE stepSize `0.001`, MIN_NOTIONAL `50`; XAUUSDT tickSize `0.01`, LOT_SIZE stepSize `0.001`, MIN_NOTIONAL `5`. These are live observations and must be refreshed at runtime, not hardcoded.\n- Added `verifyInstrumentMetadata()` to enforce each instrument's expected contract identity and extract tick/step size from exchange filters.\n- The official Futures WebSocket documentation describes both symbol kline and contract-specific continuous-kline streams, including `tradifi_perpetual`; the live WebSocket connection itself remains to be integration-tested in Module 2.3.
 
 ### Module 2.1 — Exchange/Product Metadata
 
-- Query the correct official product metadata for each instrument.
-- Validate product identity, symbol status, contract type, quote/settlement assets, and trading schedule.
-- Load tick size, quantity step, minimum/maximum quantity, and precision from exchange filters where provided.
-- Record metadata source and retrieval timestamp.
-- Do not hardcode exchange filters or assume one product's metadata applies to another.
+**Verified product map (live Binance USDⓈ-M metadata):**
 
-**Gate:** Both instruments are either verified with their correct product adapters or explicitly marked unsupported. No guessed contract rules.
+| Instrument | Contract type | Status | Underlying | Quote / margin | Tick size | LOT_SIZE step | Minimum notional |
+|---|---|---|---|---|---:|---:|---:|
+| BTCUSDT | `PERPETUAL` | `TRADING` | `COIN` / `Crypto` | USDT / USDT | 0.10 | 0.001 | 50 USDT |
+| XAUUSDT | `TRADIFI_PERPETUAL` | `TRADING` | `COMMODITY` / `TradFi` | USDT / USDT | 0.01 | 0.001 | 5 USDT |
+
+- The runtime metadata verifier enforces these instrument-specific contract identities and reads filters from Binance; filter values are not to be hardcoded.
+- Live ticker, symbol klines, and continuous-contract klines were successfully queried for both instruments. Continuous contract selectors are `BTCUSDT + PERPETUAL` and `XAUUSDT + TRADIFI_PERPETUAL`.
+- Binance exposes a commodity trading schedule for TradFi products. The schedule must be fetched and interpreted at runtime; do not assume that a TradFi commodity has uninterrupted 24/7 price updates just because the perpetual contract is available.
+- Official stream documentation lists `tradifi_perpetual` as a valid continuous-kline contract type. Actual WebSocket connectivity, session behavior, reconnects, and stale-data handling are still pending.
+
+**Gate:** Product identity and REST endpoint compatibility verified. Full Phase 2.1 completion still requires schedule integration tests and runtime metadata refresh/health handling.
 
 ### Module 2.2 — REST Market-Data Adapter
 
