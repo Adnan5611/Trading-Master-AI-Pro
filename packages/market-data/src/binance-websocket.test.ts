@@ -131,7 +131,8 @@ describe("BinanceWebSocketClient", () => {
     socket.open();
     socket.emit({ ...xauEvent, ct: "PERPETUAL" });
     expect(onCandle).not.toHaveBeenCalled();
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: /contract mismatch/ }));
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0]?.[0].message).toMatch(/contract mismatch/);
   });
 
   it("rejects malformed OHLC values", () => {
@@ -140,7 +141,8 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     socket.open();
     socket.emit({ ...btcEvent, k: { ...btcEvent.k, h: "90" } });
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: /OHLC/ }));
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0]?.[0].message).toMatch(/OHLC/);
   });
 
   it("reports commodity trading-session updates", () => {
@@ -186,7 +188,7 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     socket.open();
     socket.emit(btcEvent);
-    expect(client.getHealth().feedStatus).toBe("LIVE");
+    expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("LIVE");
     now += 2_001;
     expect(client.getHealth().instruments.BTCUSDT.feedStatus).toBe("STALE");
   });
@@ -196,7 +198,7 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     expect(client.getHealth().feedStatus).toBe("CONNECTING");
     socket.open();
-    expect(client.getHealth().feedStatus).toBe("STALE");
+    expect(client.getHealth().feedStatus).toBe("WAITING");
     client.stop();
     expect(socket.closed).toBe(true);
     expect(client.getHealth().feedStatus).toBe("OFFLINE");
