@@ -189,7 +189,8 @@ export class BinanceWebSocketClient {
   private readonly onError: ((error: Error) => void) | undefined;
   private socket: BinanceWebSocketLike | null = null;
   private state: BinanceWebSocketState = "idle";
-  private readonly lastCandleEventAt: Record<MarketInstrument, number | null> = { BTCUSDT: null, XAUUSDT: null };\n  private commoditySession: BinanceCommoditySession | null = null;
+  private readonly lastCandleEventAt: Record<MarketInstrument, number | null> = { BTCUSDT: null, XAUUSDT: null };
+  private commoditySession: BinanceCommoditySession | null = null;
 
   constructor(options: BinanceWebSocketOptions = {}) {
     this.baseUrl = options.baseUrl ?? BINANCE_USDM_MARKET_WS_URL;
@@ -314,7 +315,9 @@ export class BinanceWebSocketClient {
       throw new Error("Binance WebSocket client is already started");
     }
     this.state = "connecting";
-    this.lastCandleEventAt.BTCUSDT = null;\n    this.lastCandleEventAt.XAUUSDT = null;\n    this.commoditySession = null;
+    this.lastCandleEventAt.BTCUSDT = null;
+    this.lastCandleEventAt.XAUUSDT = null;
+    this.commoditySession = null;
     this.publishState();
 
     try {
