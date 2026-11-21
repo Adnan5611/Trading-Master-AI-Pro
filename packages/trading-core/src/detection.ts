@@ -10,6 +10,9 @@ export function createDetectionResult<TKind extends string>(
     || !Number.isFinite(result.dataTimestamp.receivedAt)) {
     throw new TypeError("Detection timestamps must be finite numbers");
   }
+  if (result.confirmedAt !== undefined && !Number.isFinite(result.confirmedAt)) {
+    throw new TypeError("confirmedAt must be a finite number");
+  }
   if (result.confirmedAt !== undefined && result.confirmedAt < result.detectedAt) {
     throw new RangeError("confirmedAt cannot be earlier than detectedAt");
   }
