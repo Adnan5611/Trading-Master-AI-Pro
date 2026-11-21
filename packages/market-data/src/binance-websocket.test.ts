@@ -131,7 +131,7 @@ describe("BinanceWebSocketClient", () => {
     socket.open();
     socket.emit({ ...xauEvent, ct: "PERPETUAL" });
     expect(onCandle).not.toHaveBeenCalled();
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: /contract mismatch/ }));
+    expect(onError).toHaveBeenCalledOnce();\n    expect(onError.mock.calls[0]?.[0].message).toMatch(/contract mismatch/);
   });
 
   it("rejects malformed OHLC values", () => {
@@ -140,7 +140,7 @@ describe("BinanceWebSocketClient", () => {
     client.start();
     socket.open();
     socket.emit({ ...btcEvent, k: { ...btcEvent.k, h: "90" } });
-    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: /OHLC/ }));
+    expect(onError).toHaveBeenCalledOnce();\n    expect(onError.mock.calls[0]?.[0].message).toMatch(/OHLC/);
   });
 
   it("reports commodity trading-session updates", () => {
