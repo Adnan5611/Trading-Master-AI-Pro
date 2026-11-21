@@ -26,11 +26,20 @@ export interface BinanceCommoditySession {
   readonly receivedAt: number;
 }
 
+export type BinanceInstrumentFeedStatus =
+  | "OFFLINE" | "CONNECTING" | "WAITING" | "LIVE" | "STALE" | "SESSION_CLOSED" | "ERROR";
+
+export interface BinanceInstrumentFeedHealth {
+  readonly lastEventAt: number | null;
+  readonly feedStatus: BinanceInstrumentFeedStatus;
+}
+
 export interface BinanceWebSocketHealth {
   readonly state: BinanceWebSocketState;
-  readonly feedStatus: "OFFLINE" | "CONNECTING" | "LIVE" | "STALE" | "ERROR";
+  readonly feedStatus: "OFFLINE" | "CONNECTING" | "WAITING" | "LIVE" | "PARTIAL" | "STALE" | "SESSION_CLOSED" | "ERROR";
   readonly lastEventAt: number | null;
   readonly staleAfterMs: number;
+  readonly instruments: Readonly<Record<MarketInstrument, BinanceInstrumentFeedHealth>>;
 }
 
 export interface BinanceWebSocketLike {
@@ -180,7 +189,7 @@ export class BinanceWebSocketClient {
   private readonly onError: ((error: Error) => void) | undefined;
   private socket: BinanceWebSocketLike | null = null;
   private state: BinanceWebSocketState = "idle";
-  private lastEventAt: number | null = null;
+  private readonly lastCandleEventAt: Record<MarketInstrument, number | null> = { BTCUSDT: null, XAUUSDT: null };\n  private commoditySession: BinanceCommoditySession | null = null;
 
   constructor(options: BinanceWebSocketOptions = {}) {
     this.baseUrl = options.baseUrl ?? BINANCE_USDM_MARKET_WS_URL;
@@ -221,17 +230,45 @@ export class BinanceWebSocketClient {
   }
 
   getHealth(): BinanceWebSocketHealth {
-    const stale = this.state === "open" &&
-      (this.lastEventAt === null || this.now() - this.lastEventAt > this.staleAfterMs);
-    const feedStatus: BinanceWebSocketHealth["feedStatus"] =
-      this.state === "open" ? (stale ? "STALE" : "LIVE") :
-      this.state === "connecting" ? "CONNECTING" :
-      this.state === "error" ? "ERROR" : "OFFLINE";
+    const now = this.now();
+    const instrumentHealth = (instrument: MarketInstrument): BinanceInstrumentFeedHealth => {
+      const lastEventAt = this.lastCandleEventAt[instrument];
+      let feedStatus: BinanceInstrumentFeedStatus;
+      if (this.state === "connecting") feedStatus = "CONNECTING";
+      else if (this.state === "error") feedStatus = "ERROR";
+      else if (this.state !== "open") feedStatus = "OFFLINE";
+      else if (instrument === "XAUUSDT" && this.commoditySession !== null &&
+          this.commoditySession.type === "NO_TRADING" &&
+          now >= this.commoditySession.startTime && now < this.commoditySession.endTime) {
+        feedStatus = "SESSION_CLOSED";
+      } else if (lastEventAt === null) feedStatus = "WAITING";
+      else if (now - lastEventAt > this.staleAfterMs) feedStatus = "STALE";
+      else feedStatus = "LIVE";
+      return Object.freeze({ lastEventAt, feedStatus });
+    };
+
+    const instruments = Object.freeze({
+      BTCUSDT: instrumentHealth("BTCUSDT"),
+      XAUUSDT: instrumentHealth("XAUUSDT")
+    });
+    const statuses = [instruments.BTCUSDT.feedStatus, instruments.XAUUSDT.feedStatus];
+    let feedStatus: BinanceWebSocketHealth["feedStatus"];
+    if (this.state === "connecting") feedStatus = "CONNECTING";
+    else if (this.state === "error") feedStatus = "ERROR";
+    else if (this.state !== "open") feedStatus = "OFFLINE";
+    else if (statuses.every((status) => status === "LIVE")) feedStatus = "LIVE";
+    else if (statuses.every((status) => status === "SESSION_CLOSED")) feedStatus = "SESSION_CLOSED";
+    else if (statuses.some((status) => status === "LIVE")) feedStatus = "PARTIAL";
+    else if (statuses.some((status) => status === "STALE")) feedStatus = "STALE";
+    else feedStatus = "WAITING";
+
+    const timestamps = Object.values(this.lastCandleEventAt).filter((value): value is number => value !== null);
     return Object.freeze({
       state: this.state,
       feedStatus,
-      lastEventAt: this.lastEventAt,
-      staleAfterMs: this.staleAfterMs
+      lastEventAt: timestamps.length === 0 ? null : Math.max(...timestamps),
+      staleAfterMs: this.staleAfterMs,
+      instruments
     });
   }
 
@@ -277,7 +314,7 @@ export class BinanceWebSocketClient {
       throw new Error("Binance WebSocket client is already started");
     }
     this.state = "connecting";
-    this.lastEventAt = null;
+    this.lastCandleEventAt.BTCUSDT = null;\n    this.lastCandleEventAt.XAUUSDT = null;\n    this.commoditySession = null;
     this.publishState();
 
     try {
