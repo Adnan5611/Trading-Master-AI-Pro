@@ -46,16 +46,62 @@ export interface BinancePrice {
   readonly receivedAt: number;
 }
 
+export interface BinanceSymbolFilter {
+  readonly filterType: string;
+  readonly tickSize?: string;
+  readonly stepSize?: string;
+  readonly minQty?: string;
+  readonly maxQty?: string;
+  readonly minPrice?: string;
+  readonly maxPrice?: string;
+  readonly notional?: string;
+}
+
 export interface BinanceSymbolMetadata {
   readonly symbol: string;
+  readonly pair?: string;
   readonly status?: string;
   readonly contractType?: string;
+  readonly baseAsset?: string;
   readonly quoteAsset?: string;
   readonly marginAsset?: string;
+  readonly underlyingType?: string;
+  readonly underlyingSubType?: readonly string[];
+  readonly pricePrecision?: number;
+  readonly quantityPrecision?: number;
   readonly onboardDate?: number;
   readonly deliveryDate?: number;
-  readonly filters?: readonly unknown[];
+  readonly filters?: readonly BinanceSymbolFilter[];
 }
+
+export interface VerifiedInstrumentMetadata extends BinanceSymbolMetadata {
+  readonly status: "TRADING";
+  readonly contractType: "PERPETUAL" | "TRADIFI_PERPETUAL";
+  readonly quoteAsset: "USDT";
+  readonly marginAsset: "USDT";
+  readonly tickSize: number;
+  readonly stepSize: number;
+}
+
+export interface BinanceTradingSession {
+  readonly startTime: number;
+  readonly endTime: number;
+  readonly type: "REGULAR" | "NO_TRADING";
+}
+
+export interface BinanceTradingSchedule {
+  readonly updateTime: number;
+  readonly commoditySessions: readonly BinanceTradingSession[];
+}
+
+const EXPECTED_PRODUCT: Record<MarketInstrument, {
+  readonly contractType: "PERPETUAL" | "TRADIFI_PERPETUAL";
+  readonly underlyingType: "COIN" | "COMMODITY";
+  readonly underlyingSubType: string;
+}> = {
+  BTCUSDT: { contractType: "PERPETUAL", underlyingType: "COIN", underlyingSubType: "Crypto" },
+  XAUUSDT: { contractType: "TRADIFI_PERPETUAL", underlyingType: "COMMODITY", underlyingSubType: "TradFi" }
+};
 
 interface ExchangeInfoResponse {
   readonly symbols?: readonly BinanceSymbolMetadata[];
@@ -216,5 +262,71 @@ export class BinanceRestClient {
     const metadata = payload.symbols?.find((item) => item.symbol === instrument);
     if (!metadata) throw new Error(`Instrument ${instrument} is not listed by this Binance product endpoint`);
     return Object.freeze({ ...metadata });
+  }
+
+  async getTradingSchedule(): Promise<BinanceTradingSchedule> {
+    const payload = await this.get<unknown>("/fapi/v1/tradingSchedule", {});
+    if (!isRecord(payload) || !isRecord(payload.marketSchedules)) {
+      throw new TypeError("Malformed Binance trading schedule response");
+    }
+    const commodity = payload.marketSchedules.COMMODITY;
+    if (!isRecord(commodity) || !Array.isArray(commodity.sessions)) {
+      throw new TypeError("Binance trading schedule is missing COMMODITY sessions");
+    }
+    const sessions = commodity.sessions.map((raw): BinanceTradingSession => {
+      if (!isRecord(raw)) throw new TypeError("Malformed commodity trading session");
+      const startTime = finiteNumber(raw.startTime, "session.startTime");
+      const endTime = finiteNumber(raw.endTime, "session.endTime");
+      if (!Number.isSafeInteger(startTime) || !Number.isSafeInteger(endTime) || endTime <= startTime) {
+        throw new RangeError("Invalid commodity trading session timestamps");
+      }
+      if (raw.type !== "REGULAR" && raw.type !== "NO_TRADING") {
+        throw new TypeError("Unknown commodity trading session type");
+      }
+      return Object.freeze({ startTime, endTime, type: raw.type });
+    });
+    return Object.freeze({
+      updateTime: finiteNumber(payload.updateTime, "updateTime"),
+      commoditySessions: Object.freeze(sessions)
+    });
+  }
+
+  async verifyInstrumentMetadata(instrument: MarketInstrument): Promise<VerifiedInstrumentMetadata> {
+    const metadata = await this.getSymbolMetadata(instrument);
+    const expected = EXPECTED_PRODUCT[instrument];
+    if (metadata.status !== "TRADING") {
+      throw new Error(`${instrument} is not tradable: status=${metadata.status ?? "missing"}`);
+    }
+    if (metadata.contractType !== expected.contractType) {
+      throw new Error(`${instrument} contract mismatch: expected ${expected.contractType}, received ${metadata.contractType ?? "missing"}`);
+    }
+    if (metadata.quoteAsset !== "USDT" || metadata.marginAsset !== "USDT") {
+      throw new Error(`${instrument} must be USDT quoted and margined`);
+    }
+    if (metadata.underlyingType !== expected.underlyingType ||
+        !metadata.underlyingSubType?.includes(expected.underlyingSubType)) {
+      throw new Error(`${instrument} underlying classification mismatch`);
+    }
+
+    const priceFilter = metadata.filters?.find((filter) => filter.filterType === "PRICE_FILTER");
+    const lotFilter = metadata.filters?.find((filter) => filter.filterType === "LOT_SIZE");
+    if (!priceFilter?.tickSize || !lotFilter?.stepSize) {
+      throw new Error(`${instrument} is missing PRICE_FILTER tickSize or LOT_SIZE stepSize`);
+    }
+    const tickSize = finiteNumber(priceFilter.tickSize, "PRICE_FILTER.tickSize");
+    const stepSize = finiteNumber(lotFilter.stepSize, "LOT_SIZE.stepSize");
+    if (tickSize <= 0 || stepSize <= 0) {
+      throw new RangeError(`${instrument} has invalid tickSize or stepSize`);
+    }
+
+    return Object.freeze({
+      ...metadata,
+      status: "TRADING",
+      contractType: expected.contractType,
+      quoteAsset: "USDT",
+      marginAsset: "USDT",
+      tickSize,
+      stepSize
+    });
   }
 }
